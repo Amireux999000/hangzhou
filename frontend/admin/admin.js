@@ -136,7 +136,10 @@ function initWebSocket() {
 		ws.onerror = (error) => {
 			console.error('WebSocket 错误:', error);
 			clearTimeout(connectTimeout);
-			updateConnectionStatus(false);
+			// 只有在非连接中状态下才更新为未连接
+			if (ws.readyState !== WebSocket.CONNECTING) {
+				updateConnectionStatus(false);
+			}
 		};
 		
 		ws.onclose = (event) => {
@@ -250,7 +253,7 @@ function handleWebSocketMessage(message) {
 				rightVotes: message.data.rightVotes
 			};
 			updateVotesDisplay(message.data);
-			showNotification('票数已更新', 'success');
+			// showNotification('票数已更新', 'success'); // 移除频繁的弹窗通知
 			break;
 		case 'ai-started':
 			// AI识别启动 - 🔧 修复：只更新匹配的流
@@ -1950,20 +1953,23 @@ loadLiveStatus();
 async function loadUsers() {
 	try {
 		const data = await fetchUserList(1, 20, {});
-		if (!data || !data.users) {
-			console.error('获取用户列表失败');
+		if (!data) {
+			console.error('获取用户列表失败: 返回数据为空');
+			showNotification('加载用户列表失败: 数据格式错误', 'error');
 			return;
 		}
+		
+		const users = data.users || (Array.isArray(data) ? data : []);
 		
 		const tbody = document.getElementById('users-table-body');
 		tbody.innerHTML = '';
 		
-		if (data.users.length === 0) {
+		if (users.length === 0) {
 			tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">暂无用户</td></tr>';
 			return;
 		}
 		
-		data.users.forEach(user => {
+		users.forEach(user => {
 			const row = document.createElement('tr');
 			// 获取头像URL，支持多种字段名
 			const avatarUrl = user.avatar || user.avatarUrl || '';

@@ -73,13 +73,11 @@ async function fetchMultiStreamsDashboard(streamIds) {
  * @returns {Promise<Object[]>}
  */
 async function fetchAllStreamsStatus() {
-	const streamsResult = await getStreamsList();
+	const streams = await getStreamsList();
 	
-	if (!streamsResult || !streamsResult.streams) {
+	if (!streams || !Array.isArray(streams) || streams.length === 0) {
 		return [];
 	}
-	
-	const streams = streamsResult.streams;
 	
 	// 为每个流获取详细状态
 	const streamIds = streams.map(s => s.id);
@@ -533,7 +531,7 @@ async function fetchUserList(page = 1, pageSize = 20, filters = {}) {
 		...filters
 	});
 	
-	return await apiRequest(`/api/admin/miniprogram/users?${queryParams}`, {
+	return await apiRequest(`/api/admin/users?${queryParams}`, {
 		method: 'GET'
 	});
 }
@@ -646,6 +644,14 @@ async function getStreamsList() {
 		// 4. 对象包含 items 或 list 数组
 		if (result && Array.isArray(result.items)) return result.items;
 		if (result && Array.isArray(result.list)) return result.list;
+		
+		// 5. 兼容对象形式，尝试提取 values
+		if (result && typeof result === 'object' && !result.error && !result.message) {
+			const values = Object.values(result);
+			if (values.length > 0 && values[0] && typeof values[0] === 'object' && values[0].id) {
+				return values;
+			}
+		}
 		
 		console.warn('⚠️ getStreamsList 返回格式非预期:', result);
 		return [];
@@ -783,12 +789,22 @@ async function getStreamDebateTopic(streamId) {
 
 /**
  * 更新辩题信息
- * @param {string} debateId - 辩题ID
+ * @param {string} debateId - 辩题ID (在当前后端实现中未使用，但保留参数兼容性)
  * @param {Object} debateData - 辩题数据 {title, description, leftPosition, rightPosition, isActive}
+ * @param {string} streamId - 直播流ID (必须提供，用于定位资源)
  * @returns {Promise<Object|null>}
  */
-async function updateDebate(debateId, debateData) {
-	return await apiRequest(`/api/admin/debates/${debateId}`, {
+async function updateDebate(debateId, debateData, streamId) {
+	// 如果没有传入 streamId，尝试从 debateData 中获取
+	const targetStreamId = streamId || debateData.streamId;
+	
+	if (!targetStreamId) {
+		console.error('❌ updateDebate: 缺少 streamId，无法更新辩题');
+		return { success: false, message: '缺少 streamId 参数' };
+	}
+	
+	// 使用正确的后端路径: /api/admin/streams/{streamId}/debate
+	return await apiRequest(`/api/admin/streams/${targetStreamId}/debate`, {
 		method: 'PUT',
 		body: JSON.stringify(debateData)
 	});

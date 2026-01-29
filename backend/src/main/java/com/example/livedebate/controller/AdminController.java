@@ -29,6 +29,7 @@ public class AdminController {
         data.put("rightVotes", votes.getRightVotes());
         data.put("isLive", status.isLive());
         data.put("liveStreamUrl", status.getStreamUrl());
+        data.put("streamId", status.getStreamId());
         data.put("debateTopic", mockService.getDebateTopic());
         
         return ApiResponse.success(data);

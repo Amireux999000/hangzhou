@@ -129,6 +129,10 @@ public class MockDataService {
     
     public void updateDebate(String id, DebateTopic topic) {
         if (debateTopic.getId().equals(id)) {
+            // Preserve ID if not provided in the update
+            if (topic.getId() == null) {
+                topic.setId(debateTopic.getId());
+            }
             this.debateTopic = topic;
         }
     }

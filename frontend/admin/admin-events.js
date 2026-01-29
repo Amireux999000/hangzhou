@@ -854,37 +854,60 @@ function initLiveControlEvents() {
 	// 顶部直播控制按钮
 	const controlLiveBtn = document.getElementById('control-live-btn');
 	if (controlLiveBtn) {
-		controlLiveBtn.addEventListener('click', async () => {
-			// 先从服务器获取最新状态，确保状态同步
-			try {
-				const dashboard = await fetchDashboard();
-				if (!dashboard) {
-					console.error('获取直播状态失败');
+		// 防止重复绑定
+		const newControlLiveBtn = controlLiveBtn.cloneNode(true);
+		controlLiveBtn.parentNode.replaceChild(newControlLiveBtn, controlLiveBtn);
+		
+		newControlLiveBtn.addEventListener('click', async (e) => {
+			e.preventDefault(); // 防止默认行为
+			e.stopPropagation(); // 防止冒泡
+			
+			// 直接根据当前全局状态或按钮文本判断用户的意图
+			// 避免 await fetchDashboard() 带来的延迟和状态跳变
+			let isLive = window.globalState?.isLive;
+			
+			// 如果 globalState 未定义，尝试从按钮文本判断
+			if (isLive === undefined || isLive === null) {
+				isLive = newControlLiveBtn.textContent.includes('停止');
+			}
+			
+			console.log('👆 点击顶部控制按钮，当前状态:', isLive ? '直播中' : '未开播');
+			
+			if (isLive) {
+				// 停止直播逻辑
+				// 必须先确认，用户取消则直接返回，不执行任何后续操作
+				if (!confirm('确定要停止直播吗？')) {
+					console.log('❌ 用户取消停止直播');
 					return;
 				}
 				
-				const isLive = dashboard.isLive || false;
+				console.log('✅ 用户确认停止直播，正在处理...');
 				
-				// 更新 globalState 为最新状态
-				if (window.globalState) {
-					window.globalState.isLive = isLive;
-				}
+				// 立即更新UI（乐观更新）
+				updateLiveStatusUI(false);
 				
-				if (isLive) {
-					// 停止直播
-					if (!confirm('确定要停止直播吗？')) {
+				try {
+					// 1. 优先从流选择器获取
+					let streamId = document.getElementById('stream-select')?.value;
+					
+					// 2. 如果没有，尝试从全局状态获取
+					if (!streamId && window.globalState?.liveId) {
+						streamId = window.globalState.liveId;
+					}
+					
+					// 3. 如果还是没有，尝试从 dashboard 获取 (最后手段)
+					if (!streamId) {
+						const dashboard = await fetchDashboard();
+						streamId = dashboard?.streamId || dashboard?.liveId || null;
+					}
+
+					if (!streamId) {
+						alert('无法获取当前直播流ID，请先选择一个直播流');
+						updateLiveStatusUI(true); // 回滚
 						return;
 					}
 					
-					// 立即更新UI（乐观更新）
-					updateLiveStatusUI(false);
-					
-					try {
-						// 从 dashboard 获取当前流ID
-						const dashboard = await fetchDashboard();
-						const streamId = dashboard?.streamId || null;
-						
-						const result = await stopLive(streamId, true, true);
+					const result = await stopLive(streamId, true, true);
 						// 判断成功：有 success 为 true，或者有 status === 'stopped'，或者 result 不为空且没有错误字段
 						const isSuccess = result && (
 							result.success === true || 
@@ -1013,9 +1036,6 @@ function initLiveControlEvents() {
 						console.error('开始直播失败:', error);
 					}
 				}
-			} catch (error) {
-				console.error('获取直播状态失败:', error);
-			}
 		});
 	}
 	

@@ -568,8 +568,8 @@ async function handleDebateFormSubmit(e) {
 		try {
 			if (debateId) {
 				// 已有辩题，更新辩题信息
-				console.log('更新辩题:', debateId);
-				const result = await updateDebate(debateId, debateData);
+				console.log('更新辩题:', debateId, '流ID:', streamId);
+				const result = await updateDebate(debateId, debateData, streamId);
 				
 				if (result && (result.success !== false)) {
 					const isActiveMsg = debateData.isActive ? '（已激活）' : '';
