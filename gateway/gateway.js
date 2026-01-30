@@ -44,6 +44,7 @@ app.use(wsProxy);
 
 const adminPath = path.join(__dirname, '../frontend/admin');
 const staticPath = path.join(__dirname, '../frontend/static');
+const appPath = path.join(__dirname, '../frontend/unpackage/dist/build/h5');
 
 // Serve Admin Panel HTML
 app.get('/admin', (req, res) => {
@@ -55,6 +56,10 @@ app.use('/admin', express.static(adminPath));
 
 // Serve Shared Static Assets
 app.use('/static', express.static(staticPath));
+
+// Serve Main App (UniApp H5)
+app.use('/', express.static(appPath));
+
 
 
 // ==================== Start Server ====================

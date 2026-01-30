@@ -15,8 +15,11 @@ const SERVER_CONFIG = {
 	},
 	get WEB_SOCKET_URL() {
 		// 🔧 配置：WebSocket 连接到 Gateway
-		// Gateway 会代理 /ws 请求到 http://localhost:8081
-		return 'ws://localhost:8080';
+		// 动态获取当前主机名和端口
+		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+		const host = window.location.hostname;
+		const port = window.location.port ? `:${window.location.port}` : '';
+		return `${protocol}//${host}${port}`;
 	}
 };
 

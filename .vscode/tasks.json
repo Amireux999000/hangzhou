@@ -1,0 +1,18 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "java (buildArtifact)",
+			"mainClass": "com.example.livedebate.LiveDebateApplication",
+			"targetPath": "${workspaceFolder}/${workspaceFolderBasename}.jar",
+			"elements": [
+				"${compileOutput:live-backend}",
+				"${dependencies:live-backend}",
+				"${compileOutput:livebackend}",
+				"${dependencies:livebackend}"
+			],
+			"problemMatcher": [],
+			"label": "java (buildArtifact): java-hz"
+		}
+	]
+}
